@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  auto-clicker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auto-clicker
+    environment:
+      - AUTO_CLICKER_HOURS=1
+      - AUTO_CLICKER_MIN_WAIT_TIME=5
+      - AUTO_CLICKER_MAX_WAIT_TIME=15
+      - CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
+      - BRAVE_PATH=C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe
+      - EDGE_PATH=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+      - WEBSITES=https://tailwindcss.com/docs/upgrade-guide,https://nextjs.org/,https://sourcecontrol.baseel.com/venture-cosmos/frontend-services,https://docs.stripe.com/stripe-cli?install-method=windows#install,https://docs.stripe.com/webhooks,https://lucide.dev/icons/
+      - OTHER_WEIGHT=0.04
+      - CLICK_WEIGHT=0.48
+      - SCROLL_WEIGHT=0.48
+      - WEBSITE_WEIGHT=0.04
+    restart: unless-stopped 

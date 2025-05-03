@@ -1,0 +1,10 @@
+[project]
+name = "random-clicker"
+version = "0.1.0"
+description = "Random clicker is a tool that clicks on random parts of the screen at random intervals. and opens random websites. Sorry for the inconvenience, We don't want to be micro-managed"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyautogui==0.9.54",
+    "python-dotenv==1.0.1"
+]
