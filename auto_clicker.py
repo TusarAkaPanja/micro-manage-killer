@@ -185,7 +185,8 @@ class AutoClicker:
         elif action == 'scroll_down':
             self.safe_scroll(-100)
         elif action == 'website':
-            self.open_random_website()
+            if os.getenv('WEBSITE_ENABLED', 'true') == 'true':
+                self.open_random_website()
 
 def main():
     logger.info("Auto-clicker started. Press Ctrl+C to stop.")
