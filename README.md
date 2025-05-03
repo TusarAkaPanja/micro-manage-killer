@@ -1,77 +1,163 @@
-# Auto Clicker with Website Navigation
+# Micro-Manage-Killer
 
-This script performs random actions on your computer, including:
-- Clicking at random screen positions
-- Scrolling up/down at random positions
-- Opening random websites from a predefined list
+A sophisticated auto-clicker tool designed to simulate human-like computer interactions to help combat aggressive micro-management monitoring systems. This tool simulates natural user behavior including mouse movements, clicks, scrolling, keyboard inputs, and web browsing.
 
 ## Features
 
-- Random actions with configurable frequency
-- Opens websites in Chrome or Brave browser (when available)
-- Websites stay open for at least 2% of the total runtime
-- Can run in Docker container for isolation
+- Random mouse movements and clicks
+- Natural scrolling patterns
+- Keyboard input simulation
+- Web browsing simulation
+- Configurable action weights
+- Randomized wait times between actions
+- Multiple browser support (Chrome, Brave, Edge)
 
-## Requirements (Local)
+## Installation
 
-- Python 3.6+
-- PyAutoGUI package
-- Chrome or Brave browser (optional, will use default browser if not found)
+### Prerequisites
 
-## Running Locally
+- Python 3.8+
+- pip (Python package manager)
+- uv (Astral Python package manager) [https://docs.astral.sh/uv/]
 
-1. Install requirements:
-   ```
-   pip install -r requirements.txt
-   ```
+### Windows Setup
 
-2. Run the script:
-   ```
-   python auto_clicker.py
-   ```
+```bash
+# Install Python from https://www.python.org/downloads/
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+or
+```bash
+uv sync
+```
 
-3. Press `Ctrl+C` to stop the script at any time
+### Linux Setup
 
-## Running with Docker
+```bash
+# Install required packages
+sudo apt-get update
+sudo apt-get install -y python3-pip python3-xlib xvfb
+pip3 install -r requirements.txt
+```
 
-### Using Docker Compose (Recommended)
+### macOS Setup
 
-1. Build and run the container:
-   ```
-   docker-compose up --build
-   ```
+```bash
+# Install Homebrew if not installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-2. To stop:
-   ```
-   docker-compose down
-   ```
-
-### Using Docker directly
-
-1. Build the Docker image:
-   ```
-   docker build -t auto-clicker .
-   ```
-
-2. Run the container:
-   ```
-   docker run --rm auto-clicker
-   ```
+# Install Python and required packages
+brew install python3
+pip3 install -r requirements.txt
+```
 
 ## Configuration
 
-Edit the `auto_clicker.py` file to customize:
-- `WEBSITES` list to change which websites are randomly opened
-- Modify the weights in `random.choices()` to adjust the probability of different actions
-- Change the `hours` variable in `main()` to adjust the total runtime
-- Adjust the wait time range in `random.uniform(5, 15)` to change the delay between actions
+Create a `.env` file in the project root with the following parameters:
 
-## How it Works
+```env
+# Duration Settings
+AUTO_CLICKER_HOURS=2                    # How long the script should run (in hours)
+AUTO_CLICKER_MIN_WAIT_TIME=5            # Minimum wait time between actions (seconds)
+AUTO_CLICKER_MAX_WAIT_TIME=15           # Maximum wait time between actions (seconds)
 
-1. The script runs for a specified duration (default: 1 hour)
-2. Every 5-15 seconds, it performs a random action:
-   - 40% chance: Click at a random screen position
-   - 40% chance: Scroll at a random screen position
-   - 20% chance: Open a random website
-3. Websites remain open for at least 2% of the total runtime (72 seconds for 1 hour)
-4. All websites are closed when the script ends 
+# Action Weights (must sum to 1.0)
+AUTO_CLICKER_CLICK_WEIGHT=0.20          # Probability of mouse clicks
+AUTO_CLICKER_SCROLL_WEIGHT=0.20         # Probability of scroll actions
+AUTO_CLICKER_WEBSITE_WEIGHT=0.20        # Probability of website interactions
+AUTO_PRESS_KEYBOARD_WEIGHT=0.20         # Probability of keyboard actions
+OTHER_WEIGHT=0.05                       # Probability of other actions (movement, etc.)
+
+# Browser Paths (Windows example)
+CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
+BRAVE_PATH=C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe
+EDGE_PATH=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+
+# Websites to visit (comma-separated)
+WEBSITES=https://www.google.com,https://www.github.com,https://www.stackoverflow.com
+```
+
+### Recommended Weight Configurations
+
+Different scenarios require different action weights. Here are some recommended configurations:
+
+#### Development Work Simulation
+```env
+AUTO_CLICKER_CLICK_WEIGHT=0.20
+AUTO_CLICKER_SCROLL_WEIGHT=0.40
+AUTO_CLICKER_WEBSITE_WEIGHT=0.20
+AUTO_PRESS_KEYBOARD_WEIGHT=0.20
+```
+
+#### Research/Reading Simulation
+```env
+AUTO_CLICKER_CLICK_WEIGHT=0.10
+AUTO_CLICKER_SCROLL_WEIGHT=0.50
+AUTO_CLICKER_WEBSITE_WEIGHT=0.30
+AUTO_PRESS_KEYBOARD_WEIGHT=0.10
+```
+
+#### Data Entry Simulation
+```env
+AUTO_CLICKER_CLICK_WEIGHT=0.30
+AUTO_CLICKER_SCROLL_WEIGHT=0.20
+AUTO_CLICKER_WEBSITE_WEIGHT=0.10
+AUTO_PRESS_KEYBOARD_WEIGHT=0.40
+```
+
+## Usage
+
+```bash
+python auto_clicker.py
+```
+
+The script will:
+1. Load configuration from `.env`
+2. Display current settings
+3. Begin simulating user activity
+4. Run for the specified duration
+5. Can be stopped at any time with Ctrl+C
+
+## Monitoring Output
+
+The script provides detailed logging of its activities:
+- Action weights and configurations
+- Runtime duration
+- Website visit patterns
+- Activity summaries
+
+## Safety Features
+
+- Random delays between actions
+- Natural movement patterns
+- Varied action sequences
+- Browser tab management
+- Automatic cleanup on exit
+
+## Troubleshooting
+
+### Linux Display Issues
+If you encounter X11 display errors:
+```bash
+export DISPLAY=:0
+xhost +
+```
+
+### Windows Permission Issues
+Run the script as administrator if browser automation fails.
+
+### macOS Security
+Allow Python and your browsers in System Preferences > Security & Privacy.
+
+## Disclaimer
+
+This tool is designed for educational purposes and testing system resilience. Users are responsible for complying with their organization's policies and applicable laws.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit pull requests.
+
+## License
+
+MIT License - See LICENSE file for details 
