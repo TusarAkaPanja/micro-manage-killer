@@ -13,6 +13,20 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Configure PyAutoGUI settings
+pyautogui.PAUSE = 0.5  # Add a small pause between actions
+pyautogui.MINIMUM_DURATION = 0.1  # Minimum time for mouse movements
+pyautogui.MINIMUM_SLEEP = 0.1  # Minimum time between actions
+
+# Get screen size
+SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
+# Define safe margins (10% of screen size)
+MARGIN = 50
+SAFE_X_MIN = MARGIN
+SAFE_X_MAX = SCREEN_WIDTH - MARGIN
+SAFE_Y_MIN = MARGIN
+SAFE_Y_MAX = SCREEN_HEIGHT - MARGIN
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -29,6 +43,57 @@ class AutoClicker:
         self.end_time = None
         self.browser_path = None
         self.logger = logging.getLogger(__name__)
+
+    def get_safe_coordinates(self):
+        """Get random coordinates within safe screen bounds"""
+        x = random.randint(SAFE_X_MIN, SAFE_X_MAX)
+        y = random.randint(SAFE_Y_MIN, SAFE_Y_MAX)
+        return x, y
+
+    def safe_mouse_move(self, x, y, relative=False):
+        """Safely move mouse to coordinates"""
+        try:
+            if relative:
+                current_x, current_y = pyautogui.position()
+                target_x = current_x + x
+                target_y = current_y + y
+                
+                # Check if target position is within safe bounds
+                if SAFE_X_MIN <= target_x <= SAFE_X_MAX and SAFE_Y_MIN <= target_y <= SAFE_Y_MAX:
+                    pyautogui.moveRel(x, y, duration=0.2)
+            else:
+                # Ensure coordinates are within safe bounds
+                safe_x = max(SAFE_X_MIN, min(x, SAFE_X_MAX))
+                safe_y = max(SAFE_Y_MIN, min(y, SAFE_Y_MAX))
+                pyautogui.moveTo(safe_x, safe_y, duration=0.2)
+        except pyautogui.FailSafeException:
+            logger.warning("Mouse movement prevented by fail-safe")
+        except Exception as e:
+            logger.error(f"Error moving mouse: {str(e)}")
+
+    def safe_click(self, x=None, y=None):
+        """Safely click at coordinates"""
+        try:
+            if x is None or y is None:
+                x, y = self.get_safe_coordinates()
+            self.safe_mouse_move(x, y)
+            pyautogui.click()
+        except Exception as e:
+            logger.error(f"Error clicking: {str(e)}")
+
+    def safe_scroll(self, amount):
+        """Safely scroll"""
+        try:
+            pyautogui.scroll(amount)
+        except Exception as e:
+            logger.error(f"Error scrolling: {str(e)}")
+
+    def safe_type(self, text):
+        """Safely type text"""
+        try:
+            pyautogui.typewrite(text, interval=0.1)
+        except Exception as e:
+            logger.error(f"Error typing: {str(e)}")
 
     def open_random_website(self):
         """Open a random website from the list using the specified browser"""
@@ -51,12 +116,12 @@ class AutoClicker:
 
     def close_website(self, website):
         """Close a website by keyboard shortcut"""
-        # self.logger.info(f"Closing website: {website}")
-        # Simulate Ctrl+W to close the tab
-        pyautogui.hotkey('ctrl', 'w')
-        # Remove from tracking
-        if website in self.opened_websites:
-            del self.opened_websites[website]
+        try:
+            pyautogui.hotkey('ctrl', 'w')
+            if website in self.opened_websites:
+                del self.opened_websites[website]
+        except Exception as e:
+            logger.error(f"Error closing website {website}: {str(e)}")
 
     def check_websites_to_close(self, total_runtime_seconds):
         """Check if any websites need to be closed based on 2% rule"""
@@ -74,91 +139,52 @@ class AutoClicker:
 
     def perform_random_action(self, total_runtime_seconds: int, remaining_runtime_seconds: int) -> None:
         """Perform a random action: click, scroll, or open website"""
-        # Get screen size
-        screen_width, screen_height = pyautogui.size()
-        
-        # Generate random position
-        x = random.randint(0, screen_width - 1)
-        y = random.randint(0, screen_height - 1)
+        # Get random position within safe bounds
+        x, y = self.get_safe_coordinates()
         
         # Move to random position
-        pyautogui.moveTo(x, y, duration=0.25)
+        self.safe_mouse_move(x, y)
         
         # Randomly choose action with weights
-        # 48% chance to click, 48% chance to scroll, 4% chance to open website
-        # k is the number of times to repeat the action
         action = random.choices(
-            ['click', 'scroll', 'website','keyboard_press', 'mouse_move', 'mouse_move_relative', 'scroll_up', 'scroll_down'],
-            weights=[float(os.getenv('AUTO_CLICKER_CLICK_WEIGHT', 0.48)), float(os.getenv('AUTO_CLICKER_SCROLL_WEIGHT', 0.48)), float(os.getenv('AUTO_CLICKER_WEBSITE_WEIGHT', 0.04)), float(os.getenv('AUTO_PRESS_KEYBOARD_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04))],
+            ['click', 'scroll', 'website', 'keyboard_press', 'mouse_move', 'mouse_move_relative', 'scroll_up', 'scroll_down'],
+            weights=[
+                float(os.getenv('AUTO_CLICKER_CLICK_WEIGHT', 0.48)),
+                float(os.getenv('AUTO_CLICKER_SCROLL_WEIGHT', 0.48)),
+                float(os.getenv('AUTO_CLICKER_WEBSITE_WEIGHT', 0.04)),
+                float(os.getenv('AUTO_PRESS_KEYBOARD_WEIGHT', 0.04)),
+                float(os.getenv('OTHER_WEIGHT', 0.04)),
+                float(os.getenv('OTHER_WEIGHT', 0.04)),
+                float(os.getenv('OTHER_WEIGHT', 0.04)),
+                float(os.getenv('OTHER_WEIGHT', 0.04))
+            ],
             k=1
         )[0]
-        # test_action = random.choices(
-        #     ['keyboard_press', 'mouse_move', 'mouse_move_relative', 'scroll_up', 'scroll_down'],
-        #     weights=[float(os.getenv('AUTO_PRESS_KEYBOARD_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04)), float(os.getenv('OTHER_WEIGHT', 0.04))],
-        #     k=1
-        # )[0]
         
         if action == 'click':
-            # self.logger.info(f"Clicking at position ({x}, {y})")
-            pyautogui.click(x, y)
+            self.safe_click(x, y)
         elif action == 'scroll':
             scroll_amount = random.randint(-100, 100)
-            # self.logger.info(f"Scrolling {scroll_amount} at position ({x}, {y})")
-            pyautogui.scroll(scroll_amount)
-
+            self.safe_scroll(scroll_amount)
         elif action == 'mouse_move':
-            pyautogui.moveTo(x, y)
-
+            self.safe_mouse_move(x, y)
         elif action == 'mouse_move_relative':
-            pyautogui.moveRel(x, y)
-        
+            rel_x = random.randint(-100, 100)
+            rel_y = random.randint(-100, 100)
+            self.safe_mouse_move(rel_x, rel_y, relative=True)
         elif action == 'keyboard_press':
             random_number = random.randint(1, 8)
             for i in range(random_number):
-                # logger.info(f"Pressing {random.choice(string.ascii_letters + string.digits)}")
-                pyautogui.press(random.choice(string.ascii_letters + string.digits))
+                self.safe_type(random.choice(string.ascii_letters + string.digits))
                 time.sleep(0.1)
             for i in range(random_number):
-                # logger.info(f"Pressing backspace")
-                pyautogui.press('backspace')
+                self.safe_type('\b')  # backspace
                 time.sleep(0.1)
-
         elif action == 'scroll_up':
-            pyautogui.scroll(100)
-
+            self.safe_scroll(100)
         elif action == 'scroll_down':
-            pyautogui.scroll(-100)
-        
+            self.safe_scroll(-100)
         elif action == 'website':
-            # Try to find Chrome or Brave browser
-            if platform.system() == 'Windows':
-                CHROME_PATH = os.getenv('CHROME_PATH')
-                BRAVE_PATH = os.getenv('BRAVE_PATH')
-                EDGE_PATH = os.getenv('EDGE_PATH')
-                chrome_paths = [
-                    CHROME_PATH,
-                    BRAVE_PATH,
-                    EDGE_PATH,
-                ]
-                for path in chrome_paths:
-                    try:
-                        if path:
-                            if subprocess.run(["powershell", "-Command", f"Test-Path '{path}'"], 
-                                            capture_output=True).stdout.strip() == b'True':
-                                self.browser_path = path if os.path.exists(path) else None
-                            break
-                    except:
-                        pass
-            else:  # Linux/MacOS
-                for browser in ['google-chrome', 'brave-browser']:
-                    try:
-                        if subprocess.run(['which', browser], 
-                                        capture_output=True).returncode == 0:
-                            self.browser_path = browser
-                            break
-                    except:
-                        pass
-            
             self.open_random_website()
 
 def main():

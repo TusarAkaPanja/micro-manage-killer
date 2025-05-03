@@ -11,6 +11,9 @@ A sophisticated auto-clicker tool designed to simulate human-like computer inter
 - Configurable action weights
 - Randomized wait times between actions
 - Multiple browser support (Chrome, Brave, Edge)
+- Fail-safe mechanisms and bounds checking
+- Natural movement patterns
+- Error recovery and graceful degradation
 
 ## Installation
 
@@ -129,11 +132,25 @@ The script provides detailed logging of its activities:
 
 ## Safety Features
 
+### Mouse Movement Safety
+- Maintains safe margins from screen edges (configurable)
+- Natural movement patterns with acceleration/deceleration
+- Fail-safe recovery mechanisms
+- Bounds checking for all coordinates
+
+### Action Safety
 - Random delays between actions
-- Natural movement patterns
+- Natural typing patterns
 - Varied action sequences
 - Browser tab management
 - Automatic cleanup on exit
+- Error recovery for all operations
+
+### System Protection
+- Resource usage monitoring
+- Graceful shutdown handling
+- Browser process management
+- Display server compatibility checks
 
 ## Troubleshooting
 
