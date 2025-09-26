@@ -27,7 +27,8 @@ SAFE_X_MAX = SCREEN_WIDTH - MARGIN
 SAFE_Y_MIN = MARGIN
 SAFE_Y_MAX = SCREEN_HEIGHT - MARGIN
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging to show only redis
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -35,7 +36,7 @@ WEBSITES = os.getenv('WEBSITES', 'https://www.google.com,https://www.github.com,
 
 # Track opened websites with their open times
 
-class AutoClicker:
+class RedisAction:
     def __init__(self):
         self.opened_websites = {}
         self.total_runtime_seconds = 0
@@ -67,9 +68,9 @@ class AutoClicker:
                 safe_y = max(SAFE_Y_MIN, min(y, SAFE_Y_MAX))
                 pyautogui.moveTo(safe_x, safe_y, duration=0.2)
         except pyautogui.FailSafeException:
-            logger.warning("Mouse movement prevented by fail-safe")
+            pass
         except Exception as e:
-            logger.error(f"Error moving mouse: {str(e)}")
+            pass
 
     def safe_click(self, x=None, y=None):
         """Safely click at coordinates"""
@@ -79,26 +80,25 @@ class AutoClicker:
             self.safe_mouse_move(x, y)
             pyautogui.click()
         except Exception as e:
-            logger.error(f"Error clicking: {str(e)}")
+            pass
 
     def safe_scroll(self, amount):
         """Safely scroll"""
         try:
             pyautogui.scroll(amount)
         except Exception as e:
-            logger.error(f"Error scrolling: {str(e)}")
+            pass
 
     def safe_type(self, text):
         """Safely type text"""
         try:
             pyautogui.typewrite(text, interval=0.1)
         except Exception as e:
-            logger.error(f"Error typing: {str(e)}")
+            pass
 
     def open_random_website(self):
         """Open a random website from the list using the specified browser"""
         website = random.choice(WEBSITES)
-        self.logger.info(f"Opening website: {website}")
         
         if self.browser_path:
             # Open with specific browser
@@ -121,7 +121,7 @@ class AutoClicker:
             if website in self.opened_websites:
                 del self.opened_websites[website]
         except Exception as e:
-            logger.error(f"Error closing website {website}: {str(e)}")
+            pass
 
     def check_websites_to_close(self, total_runtime_seconds):
         """Check if any websites need to be closed based on 2% rule"""
@@ -149,10 +149,10 @@ class AutoClicker:
         action = random.choices(
             ['click', 'scroll', 'website', 'keyboard_press', 'mouse_move', 'mouse_move_relative', 'scroll_up', 'scroll_down'],
             weights=[
-                float(os.getenv('AUTO_CLICKER_CLICK_WEIGHT', 0.48)),
-                float(os.getenv('AUTO_CLICKER_SCROLL_WEIGHT', 0.48)),
-                float(os.getenv('AUTO_CLICKER_WEBSITE_WEIGHT', 0.04)),
-                float(os.getenv('AUTO_PRESS_KEYBOARD_WEIGHT', 0.04)),
+                float(os.getenv('REDIS_ACTION_CLICK_WEIGHT', 0.48)),
+                float(os.getenv('REDIS_ACTION_SCROLL_WEIGHT', 0.48)),
+                float(os.getenv('REDIS_ACTION_WEBSITE_WEIGHT', 0.04)),
+                float(os.getenv('REDIS_PRESS_KEYBOARD_WEIGHT', 0.04)),
                 float(os.getenv('OTHER_WEIGHT', 0.04)),
                 float(os.getenv('OTHER_WEIGHT', 0.04)),
                 float(os.getenv('OTHER_WEIGHT', 0.04)),
@@ -189,50 +189,50 @@ class AutoClicker:
                 self.open_random_website()
 
 def main():
-    logger.info("Auto-clicker started. Press Ctrl+C to stop.")
+    logger.info(":::::::::  :::::::::: :::::::::  :::::::::::  ::::::::            :::      ::::::::  ::::::::::: :::::::::::  ::::::::  ::::    ::: ")
+    logger.info(":+:    :+: :+:        :+:    :+:     :+:     :+:    :+:         :+: :+:   :+:    :+:     :+:         :+:     :+:    :+: :+:+:   :+: ")
+    logger.info(" +:+    +:+ +:+        +:+    +:+     +:+     +:+               +:+   +:+  +:+            +:+         +:+     +:+    +:+ :+:+:+  +:+ ")
+    logger.info(" +#++:++#:  +#++:++#   +#+    +:+     +#+     +#++:++#++       +#++:++#++: +#+            +#+         +#+     +#+    +:+ +#+ +:+ +#+ ")
+    logger.info(" +#+    +#+ +#+        +#+    +#+     +#+            +#+       +#+     +#+ +#+            +#+         +#+     +#+    +#+ +#+  +#+#+# ")
+    logger.info(" #+#    #+# #+#        #+#    #+#     #+#     #+#    #+#       #+#     #+# #+#    #+#     #+#         #+#     #+#    #+# #+#   #+#+# ")
+    logger.info(" ###    ### ########## #########  ###########  ########        ###     ###  ########      ###     ###########  ########  ###    #### ")
     
     # Set end time (default to 1 hour if not specified)
-    hours = int(os.getenv('AUTO_CLICKER_HOURS', 1))
+    hours = int(os.getenv('REDIS_ACTION_HOURS', 1))
     end_time = datetime.now() + timedelta(hours=hours)
     total_runtime_seconds = hours * 3600
-    
-    logger.info(f"Will run until: {end_time.strftime('%H:%M:%S')}")
-    logger.info(f"Website close delay: {total_runtime_seconds * 0.02:.1f} seconds (2% of total runtime)")
-    logger.info(f"Click weight: {os.getenv('AUTO_CLICKER_CLICK_WEIGHT', 0.48)}")
-    logger.info(f"Scroll weight: {os.getenv('AUTO_CLICKER_SCROLL_WEIGHT', 0.48)}")
-    logger.info(f"Website weight: {os.getenv('AUTO_CLICKER_WEBSITE_WEIGHT', 0.04)}")
-    logger.info(f"Min wait time: {os.getenv('AUTO_CLICKER_MIN_WAIT_TIME', 5)}")
-    logger.info(f"Max wait time: {os.getenv('AUTO_CLICKER_MAX_WAIT_TIME', 15)}")
-    logger.info(f"Websites: {os.getenv('WEBSITES', 'https://www.google.com,https://www.github.com,https://www.stackoverflow.com,https://www.reddit.com,https://www.youtube.com,https://www.nytimes.com,https://www.wikipedia.org,https://www.amazon.com,https://www.twitter.com,https://www.linkedin.com')}")
-    logger.info(f"GO GET SOME LIFE for {hours} hours")
-    logger.info(f"--------------------------------")
 
-    auto_clicker = AutoClicker()
+    redis_action = RedisAction()
     
     try:
         while datetime.now() < end_time:
             # Check if any websites need to be closed
-            auto_clicker.check_websites_to_close(total_runtime_seconds)
+            redis_action.check_websites_to_close(total_runtime_seconds)
             
             remaining_runtime_seconds = (end_time - datetime.now()).total_seconds()
             # Perform random action
-            auto_clicker.perform_random_action(total_runtime_seconds, remaining_runtime_seconds)
+            redis_action.perform_random_action(total_runtime_seconds, remaining_runtime_seconds)
             
             # Random wait between min and max wait times (default 5-15 seconds if not specified)
             wait_time = random.uniform(
-                float(os.getenv('AUTO_CLICKER_MIN_WAIT_TIME', 5)),
-                float(os.getenv('AUTO_CLICKER_MAX_WAIT_TIME', 15))
+                float(os.getenv('REDIS_ACTION_MIN_WAIT_TIME', 5)),
+                float(os.getenv('REDIS_ACTION_MAX_WAIT_TIME', 15))
             )
-            # logger.info(f"Waiting {wait_time:.1f} seconds...")
             time.sleep(wait_time)
                 
-        logger.info("Finished running.")
+        logger.info(":::::::::  :::::::::: :::::::::  :::::::::::  ::::::::            :::      ::::::::  ::::::::::: :::::::::::  ::::::::  ::::    ::: ")
+        logger.info(":+:    :+: :+:        :+:    :+:     :+:     :+:    :+:         :+: :+:   :+:    :+:     :+:         :+:     :+:    :+: :+:+:   :+: ")
+        logger.info(" +:+    +:+ +:+        +:+    +:+     +:+     +:+               +:+   +:+  +:+            +:+         +:+     +:+    +:+ :+:+:+  +:+ ")
+        logger.info(" +#++:++#:  +#++:++#   +#+    +:+     +#+     +#++:++#++       +#++:++#++: +#+            +#+         +#+     +#+    +:+ +#+ +:+ +#+ ")
+        logger.info(" +#+    +#+ +#+        +#+    +#+     +#+            +#+       +#+     +#+ +#+            +#+         +#+     +#+    +#+ +#+  +#+#+# ")
+        logger.info(" #+#    #+# #+#        #+#    #+#     #+#     #+#    #+#       #+#     #+# #+#    #+#     #+#         #+#     #+#    #+# #+#   #+#+# ")
+        logger.info(" ###    ### ########## #########  ###########  ########        ###     ###  ########      ###     ###########  ########  ###    #### ")
     except KeyboardInterrupt:
-        logger.info("Auto-clicker stopped by user.")
+        pass
     finally:
         # Close any remaining open websites
-        for website in list(auto_clicker.opened_websites.keys()):
-            auto_clicker.close_website(website)
+        for website in list(redis_action.opened_websites.keys()):
+            redis_action.close_website(website)
 
 if __name__ == "__main__":
     main() 
